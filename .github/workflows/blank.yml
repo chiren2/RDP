@@ -7,7 +7,7 @@ on:
         description: 'Google Headless sayfasından aldığınız Windows PowerShell kodu'
         required: true
       PIN:
-        description: '6 haneli bağlantı PIN kodu (örn: 123456)'
+        description: '6 haneli bağlantı PIN kodu'
         required: true
         default: '123456'
 
@@ -19,15 +19,13 @@ jobs:
     steps:
     - name: Chrome Remote Desktop Indir ve Kur
       run: |
-        Invoke-WebRequest -Uri "https://dl.google.com/remotedesktop/chromeremotedesktophost.msi" -OutFile "crd.msi"
-        Start-Process msiexec.exe -Wait -ArgumentList "/i crd.msi /quiet"
+        $url = "https://dl.google.com/dl/edgedl/chrome-remote-desktop/chromeremotedesktophost.msi"
+        Invoke-WebRequest -Uri $url -OutFile "crd.msi"
+        Start-Process msiexec.exe -Wait -ArgumentList "/i crd.msi /quiet /norestart"
 
     - name: Google Yetkilendirmesini Yap
       run: |
-        $cmd = "${{ github.event.inputs.AUTH_CODE }}"
-        $pin = "${{ github.event.inputs.PIN }}"
-        $finalCmd = $cmd.TrimEnd('"') + " --pin=$pin`""
-        Invoke-Expression $finalCmd
+        ${{ github.event.inputs.AUTH_CODE }} --pin=${{ github.event.inputs.PIN }}
 
     - name: Baglantiyi Acik Tut
       run: |
