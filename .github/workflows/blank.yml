@@ -1,6 +1,15 @@
-name: Window 10
+name: Windows CRD
 
-on: [push, workflow_dispatch]
+on:
+  workflow_dispatch:
+    inputs:
+      AUTH_CODE:
+        description: 'Google Headless sayfasından aldığınız Windows PowerShell kodu'
+        required: true
+      PIN:
+        description: '6 haneli bağlantı PIN kodu (örn: 123456)'
+        required: true
+        default: '123456'
 
 jobs:
   build:
@@ -8,23 +17,19 @@ jobs:
     timeout-minutes: 9999
 
     steps:
-    - name: Download Ngrok v3
-      run: Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip -OutFile ngrok.zip
-
-    - name: Extract
-      run: Expand-Archive ngrok.zip
-
-    - name: Auth
-      run: .\ngrok\ngrok.exe config add-authtoken $Env:NGROK_AUTH_TOKEN
-      env:
-        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
-
-    - name: Enable TS
+    - name: Chrome Remote Desktop Indir ve Kur
       run: |
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
-        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
-        Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "@cyb3rking" -Force)
+        Invoke-WebRequest -Uri "https://dl.google.com/remotedesktop/chromeremotedesktophost.msi" -OutFile "crd.msi"
+        Start-Process msiexec.exe -Wait -ArgumentList "/i crd.msi /quiet"
 
-    - name: Create Tunnel
-      run: .\ngrok\ngrok.exe tcp 3389
+    - name: Google Yetkilendirmesini Yap
+      run: |
+        $cmd = "${{ github.event.inputs.AUTH_CODE }}"
+        $pin = "${{ github.event.inputs.PIN }}"
+        $finalCmd = $cmd.TrimEnd('"') + " --pin=$pin`""
+        Invoke-Expression $finalCmd
+
+    - name: Baglantiyi Acik Tut
+      run: |
+        Write-Host "Uzak masaustu aktif! remotedesktop.google.com/access adresinden baglanabilirsiniz."
+        while ($true) { Start-Sleep -Seconds 3600 }
